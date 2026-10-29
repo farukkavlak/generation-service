@@ -60,9 +60,9 @@ Done when every fake provider input behaves as described and the event loop is n
 
 ## 7. History endpoint
 
-- [ ] Implement `GET /v1/generations` for the requesting user, newest first
-- [ ] Validate `limit` (default 20, maximum 100)
-- [ ] Add cursor-based pagination that is stable for equal timestamps
+- [x] Implement `GET /v1/generations` for the requesting user, newest first
+- [x] Validate `limit` (default 20, maximum 100)
+- [x] Add cursor-based pagination that is stable for equal timestamps
 
 ## 8. Tests
 

@@ -14,6 +14,8 @@ const QUOTA_REMAINING_HEADER = 'X-Quota-Remaining';
 export class GenerationController implements Controller {
   readonly errorStatusByCode: Readonly<Record<GenerationErrorCode, number>> = {
     invalid_prompt: 400,
+    invalid_limit: 400,
+    invalid_cursor: 400,
     quota_exceeded: 429,
     provider_failed: 502,
     provider_timeout: 504,
@@ -39,6 +41,12 @@ export class GenerationController implements Controller {
         }
         throw error;
       }
+    });
+
+    router.get('/v1/generations', async (req, res) => {
+      const userId = requireUserId(req);
+      const page = await this.service.getHistoryPage(userId, req.query.limit, req.query.cursor);
+      res.json({ items: page.items.map(toResponse), nextCursor: page.nextCursor });
     });
 
     router.get('/v1/quota', async (req, res) => {

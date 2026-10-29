@@ -1,6 +1,8 @@
 import type { Pool } from 'pg';
 
-import type { Generation, NewGeneration } from './generation.js';
+import type { Generation, HistoryCursor, NewGeneration } from './generation.js';
+
+const GENERATION_COLUMNS = 'id, prompt, result, cached, created_at';
 
 interface GenerationRow {
   // bigint stays a string: it can exceed Number.MAX_SAFE_INTEGER.
@@ -18,7 +20,7 @@ export class GenerationRepository {
     const { rows } = await this.pool.query<GenerationRow>(
       `INSERT INTO generations (user_id, prompt, result, cached)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, prompt, result, cached, created_at`,
+       RETURNING ${GENERATION_COLUMNS}`,
       [generation.userId, generation.prompt, generation.result, generation.cached],
     );
     const [row] = rows;
@@ -26,6 +28,26 @@ export class GenerationRepository {
       throw new Error('Insert returned no row');
     }
     return toGeneration(row);
+  }
+
+  // Page by (created_at, id), not id: created_at is the transaction start, so id order can differ.
+  async findPage(userId: string, limit: number, after?: HistoryCursor): Promise<Generation[]> {
+    const { rows } = after
+      ? await this.pool.query<GenerationRow>(
+          `SELECT ${GENERATION_COLUMNS} FROM generations
+           WHERE user_id = $1 AND (created_at, id) < ($2, $3)
+           ORDER BY created_at DESC, id DESC
+           LIMIT $4`,
+          [userId, after.createdAt, after.id, limit],
+        )
+      : await this.pool.query<GenerationRow>(
+          `SELECT ${GENERATION_COLUMNS} FROM generations
+           WHERE user_id = $1
+           ORDER BY created_at DESC, id DESC
+           LIMIT $2`,
+          [userId, limit],
+        );
+    return rows.map(toGeneration);
   }
 }
 

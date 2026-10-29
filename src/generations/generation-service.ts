@@ -1,6 +1,6 @@
 import { ApplicationError } from '../lib/application-error.js';
 import type { AiProvider } from './ai-provider.js';
-import type { Generation } from './generation.js';
+import type { Generation, HistoryCursor } from './generation.js';
 import type { GenerationRepository } from './generation-repository.js';
 import type { QuotaRepository } from './quota-repository.js';
 import type { ResultCache } from './result-cache.js';
@@ -9,18 +9,48 @@ const MAX_PROMPT_LENGTH = 2000;
 const PROVIDER_TIMEOUT_MS = 3000;
 const DAILY_QUOTA_LIMIT = 5;
 const TIMED_OUT = Symbol('timed out');
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
+const CURSOR_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+// 18 digits always fit in a Postgres bigint.
+const CURSOR_ID = /^\d{1,18}$/;
 
 export type GenerationErrorCode =
-  'invalid_prompt' | 'quota_exceeded' | 'provider_failed' | 'provider_timeout';
+  | 'invalid_prompt'
+  | 'invalid_limit'
+  | 'invalid_cursor'
+  | 'quota_exceeded'
+  | 'provider_failed'
+  | 'provider_timeout';
 
 interface CreatedGeneration {
   generation: Generation;
   quotaRemaining: number;
 }
 
+interface HistoryPage {
+  items: Generation[];
+  nextCursor: string | null;
+}
+
 class InvalidPromptError extends ApplicationError {
   constructor(message: string) {
     super('invalid_prompt' satisfies GenerationErrorCode, message);
+  }
+}
+
+class InvalidLimitError extends ApplicationError {
+  constructor() {
+    super(
+      'invalid_limit' satisfies GenerationErrorCode,
+      `limit must be an integer from 1 to ${String(MAX_PAGE_SIZE)}`,
+    );
+  }
+}
+
+class InvalidCursorError extends ApplicationError {
+  constructor() {
+    super('invalid_cursor' satisfies GenerationErrorCode, 'cursor is invalid');
   }
 }
 
@@ -98,6 +128,23 @@ export class GenerationService {
     return { generation, quotaRemaining: DAILY_QUOTA_LIMIT - reservation.used };
   }
 
+  async getHistoryPage(
+    userId: string,
+    rawLimit: unknown,
+    rawCursor: unknown,
+  ): Promise<HistoryPage> {
+    const limit = parseLimit(rawLimit);
+    const after = rawCursor === undefined ? undefined : decodeCursor(rawCursor);
+    // One extra row tells whether a next page exists.
+    const rows = await this.generations.findPage(userId, limit + 1, after);
+    const items = rows.slice(0, limit);
+    const last = items.at(-1);
+    return {
+      items,
+      nextCursor: rows.length > limit && last ? encodeCursor(last) : null,
+    };
+  }
+
   async getQuotaRemaining(userId: string): Promise<number> {
     const used = await this.quota.findUsedToday(userId);
     return DAILY_QUOTA_LIMIT - used;
@@ -152,4 +199,58 @@ async function callProviderWithTimeout(
   } finally {
     clearTimeout(timer);
   }
+}
+
+function parseLimit(rawLimit: unknown): number {
+  if (rawLimit === undefined) {
+    return DEFAULT_PAGE_SIZE;
+  }
+  if (typeof rawLimit !== 'string' || !/^\d+$/.test(rawLimit)) {
+    throw new InvalidLimitError();
+  }
+  const limit = Number(rawLimit);
+  if (limit < 1 || limit > MAX_PAGE_SIZE) {
+    throw new InvalidLimitError();
+  }
+  return limit;
+}
+
+function decodeCursor(rawCursor: unknown): HistoryCursor {
+  if (typeof rawCursor !== 'string') {
+    throw new InvalidCursorError();
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(Buffer.from(rawCursor, 'base64url').toString('utf8'));
+  } catch {
+    throw new InvalidCursorError();
+  }
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !('createdAt' in parsed) ||
+    !('id' in parsed)
+  ) {
+    throw new InvalidCursorError();
+  }
+  const { createdAt, id } = parsed;
+  if (
+    typeof createdAt !== 'string' ||
+    !CURSOR_DATE.test(createdAt) ||
+    typeof id !== 'string' ||
+    !CURSOR_ID.test(id)
+  ) {
+    throw new InvalidCursorError();
+  }
+  const date = new Date(createdAt);
+  // Round trip rejects dates that Date silently rolls over, like Feb 30.
+  if (Number.isNaN(date.getTime()) || date.toISOString() !== createdAt) {
+    throw new InvalidCursorError();
+  }
+  return { createdAt, id };
+}
+
+function encodeCursor(generation: Generation): string {
+  const cursor = { createdAt: generation.createdAt.toISOString(), id: generation.id };
+  return Buffer.from(JSON.stringify(cursor)).toString('base64url');
 }
