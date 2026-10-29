@@ -24,6 +24,38 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/lib/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^\\.\\./\\.\\./',
+              message: 'src/lib must not depend on application code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/lib/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^\\.\\./',
+              message: 'src/lib must not depend on application code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
   },

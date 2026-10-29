@@ -11,10 +11,11 @@ The work is split into small units. Each unit is built on its own branch and rev
 
 - [ ] Add a Dockerfile for the service
 - [ ] Add Docker Compose with the service, PostgreSQL and Redis
-- [ ] Read configuration from environment variables
+- [x] Read configuration from environment variables
 - [ ] Connect to PostgreSQL and Redis
 - [ ] Add a migration runner that runs on startup
 - [ ] Start the Express app with a request body size limit
+- [x] Add a logger interface with a console implementation
 
 Done when `docker compose up` starts all three services and the API responds.
 
