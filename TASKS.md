@@ -21,9 +21,9 @@ Done when `docker compose up` starts all three services and the API responds.
 
 ## 2. Database schema
 
-- [ ] Create the `generations` table
-- [ ] Create the `daily_quota` table with one row per user per UTC day
-- [ ] Add an index for the history query
+- [x] Create the `generations` table
+- [x] Create the `daily_quota` table with one row per user per UTC day
+- [x] Add an index for the history query
 
 Done when migrations apply to an empty database and are skipped on restart.
 
