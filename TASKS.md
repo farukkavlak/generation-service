@@ -29,8 +29,8 @@ Done when migrations apply to an empty database and are skipped on restart.
 
 ## 3. AI provider
 
-- [ ] Define the `AiProvider` interface
-- [ ] Implement the fake provider with the behaviors described in the case
+- [x] Define the `AiProvider` interface
+- [x] Implement the fake provider with the behaviors described in the case
 - [ ] Time out provider calls after 3 seconds
 
 Done when every fake provider input behaves as described and the event loop is never blocked.

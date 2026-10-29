@@ -56,6 +56,26 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/generations/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['express', 'express/*', 'pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'],
+              message: 'Business code must not depend on infrastructure or HTTP.',
+            },
+            {
+              regex: '/(infra|http)/|^\\.\\./(server|config)\\.js$',
+              message: 'Business code must not depend on infrastructure, HTTP, config or wiring.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
   },
