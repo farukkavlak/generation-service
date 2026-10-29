@@ -7,7 +7,7 @@ export function createPostgresPool(connectionString: string, logger: Logger): pg
     connectionString,
     connectionTimeoutMillis: 5000,
     statement_timeout: 5000,
-    // pg parses dates only in ISO DateStyle; pin it so server defaults cannot break parsing.
+    // Pin ISO DateStyle (pg parses dates only in ISO) and UTC (so any date cast uses the UTC day).
     options: '-c DateStyle=ISO -c TimeZone=UTC',
   });
   // Idle clients can emit errors, e.g. on a server restart. Without a listener the process crashes.

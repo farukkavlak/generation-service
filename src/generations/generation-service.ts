@@ -11,7 +11,8 @@ const DAILY_QUOTA_LIMIT = 5;
 const TIMED_OUT = Symbol('timed out');
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
-const CURSOR_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+// Postgres has no year 0, but JS dates accept it.
+const CURSOR_DATE = /^(?!0000)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 // 18 digits always fit in a Postgres bigint.
 const CURSOR_ID = /^\d{1,18}$/;
 
