@@ -9,8 +9,8 @@ The work is split into small units. Each unit is built on its own branch and rev
 
 ## 1. Infrastructure
 
-- [ ] Add a Dockerfile for the service
-- [ ] Add Docker Compose with the service, PostgreSQL and Redis
+- [x] Add a Dockerfile for the service
+- [x] Add Docker Compose with the service, PostgreSQL and Redis
 - [x] Read configuration from environment variables
 - [x] Connect to PostgreSQL and Redis
 - [x] Add a migration runner that runs on startup
