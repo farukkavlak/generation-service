@@ -66,10 +66,10 @@ Done when every fake provider input behaves as described and the event loop is n
 
 ## 8. Tests
 
-- [ ] Run tests against real PostgreSQL and Redis with Testcontainers
-- [ ] Add a controllable provider for tests
-- [ ] Test concurrent requests against the quota
-- [ ] Test cache hits for differently written prompts
+- [x] Run tests against real PostgreSQL and Redis with Testcontainers
+- [x] Add a controllable provider for tests
+- [x] Test concurrent requests against the quota
+- [x] Test cache hits for differently written prompts
 
 ## 9. Seed data and query plan
 

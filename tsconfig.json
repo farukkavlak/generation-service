@@ -16,5 +16,5 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node"]
   },
-  "include": ["src", "test", "scripts"]
+  "include": ["src", "test", "scripts", "vitest.config.ts"]
 }
