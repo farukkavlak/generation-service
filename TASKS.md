@@ -73,7 +73,7 @@ Done when every fake provider input behaves as described and the event loop is n
 
 ## 9. Seed data and query plan
 
-- [ ] Add a seed script that creates 100,000 records for one user
+- [x] Add a seed script that creates 100,000 records for one user
 - [ ] Capture `EXPLAIN ANALYZE` output for the history query
 
 ## 10. Delivery
