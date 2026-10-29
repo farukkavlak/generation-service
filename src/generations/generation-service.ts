@@ -1,28 +1,28 @@
-import { ApplicationError } from '../lib/errors/application-error.js';
+import { ApplicationError } from '../lib/application-error.js';
 import type { AiProvider } from './ai-provider.js';
+import type { Generation } from './generation.js';
 import type { GenerationRepository } from './generation-repository.js';
-import type { Generation } from './types.js';
 
 const MAX_PROMPT_LENGTH = 2000;
 const PROVIDER_TIMEOUT_MS = 3000;
 
-export type ErrorCode = 'invalid_prompt' | 'provider_failed' | 'provider_timeout';
+export type GenerationErrorCode = 'invalid_prompt' | 'provider_failed' | 'provider_timeout';
 
 class InvalidPromptError extends ApplicationError {
   constructor(message: string) {
-    super('invalid_prompt' satisfies ErrorCode, message);
+    super('invalid_prompt' satisfies GenerationErrorCode, message);
   }
 }
 
 class ProviderFailedError extends ApplicationError {
   constructor(options?: ErrorOptions) {
-    super('provider_failed' satisfies ErrorCode, 'AI provider failed', options);
+    super('provider_failed' satisfies GenerationErrorCode, 'AI provider failed', options);
   }
 }
 
 class ProviderTimeoutError extends ApplicationError {
   constructor() {
-    super('provider_timeout' satisfies ErrorCode, 'AI provider timed out');
+    super('provider_timeout' satisfies GenerationErrorCode, 'AI provider timed out');
   }
 }
 
@@ -33,13 +33,13 @@ export class GenerationService {
   ) {}
 
   async createGeneration(userId: string, rawPrompt: unknown): Promise<Generation> {
-    const prompt = validatePrompt(rawPrompt);
+    const prompt = parsePrompt(rawPrompt);
     const result = await callProviderWithTimeout(this.provider, normalizePrompt(prompt));
     return this.generations.save({ userId, prompt, result, cached: false });
   }
 }
 
-function validatePrompt(rawPrompt: unknown): string {
+function parsePrompt(rawPrompt: unknown): string {
   if (typeof rawPrompt !== 'string') {
     throw new InvalidPromptError('prompt must be a string');
   }
@@ -58,7 +58,7 @@ function validatePrompt(rawPrompt: unknown): string {
   return prompt;
 }
 
-// Locale-independent toLowerCase and NFC, so every instance and keyboard builds the same cache key.
+// NFC, so composed and decomposed forms of the same text share one cache key.
 function normalizePrompt(prompt: string): string {
   return prompt.toLowerCase().normalize('NFC').replace(/\s+/g, ' ');
 }

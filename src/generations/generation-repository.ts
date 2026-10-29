@@ -1,6 +1,6 @@
 import type { Pool } from 'pg';
 
-import type { Generation, NewGeneration } from './types.js';
+import type { Generation, NewGeneration } from './generation.js';
 
 interface GenerationRow {
   // bigint stays a string: it can exceed Number.MAX_SAFE_INTEGER.

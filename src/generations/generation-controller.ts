@@ -2,11 +2,11 @@ import { type Request, Router } from 'express';
 
 import type { Controller } from '../http/app.js';
 import { requireUserId } from '../http/require-user-id.js';
-import type { ErrorCode, GenerationService } from './generation-service.js';
-import type { Generation } from './types.js';
+import type { Generation } from './generation.js';
+import type { GenerationErrorCode, GenerationService } from './generation-service.js';
 
 export class GenerationController implements Controller {
-  readonly errorStatusByCode: Readonly<Record<ErrorCode, number>> = {
+  readonly errorStatusByCode: Readonly<Record<GenerationErrorCode, number>> = {
     invalid_prompt: 400,
     provider_failed: 502,
     provider_timeout: 504,
@@ -23,7 +23,7 @@ export class GenerationController implements Controller {
   }
 }
 
-// Express leaves the body undefined when the request is not JSON.
+// req.body is undefined unless the request is JSON, and JSON may be an array.
 function readPrompt(req: Request): unknown {
   const body: unknown = req.body;
   return typeof body === 'object' && body !== null && 'prompt' in body ? body.prompt : undefined;

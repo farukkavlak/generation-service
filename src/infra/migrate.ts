@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import type { Pool, PoolClient } from 'pg';
 
-import type { Logger } from '../lib/logger/logger.js';
+import type { Logger } from '../lib/logger.js';
 
 const MIGRATION_LOCK_ID = 7_250_001;
 

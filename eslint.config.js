@@ -4,7 +4,7 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
 const EXPRESS = ['express', 'express/*'];
-const DATABASE_DRIVERS = ['pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'];
+const DATA_STORE_CLIENTS = ['pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'];
 const WIRING = '^(\\.\\./)+(server|config)\\.js$';
 
 function restrictImports(files, patterns) {
@@ -12,7 +12,7 @@ function restrictImports(files, patterns) {
 }
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules'] },
+  { ignores: ['dist', 'coverage'] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {
@@ -33,7 +33,7 @@ export default tseslint.config(
   },
   restrictImports(
     ['src/lib/**/*.ts'],
-    [{ regex: '^\\.\\./\\.\\./', message: 'lib must not depend on application code.' }],
+    [{ regex: '^\\.\\./', message: 'lib must not depend on application code.' }],
   ),
   restrictImports(
     ['src/infra/**/*.ts'],
@@ -54,10 +54,10 @@ export default tseslint.config(
     ],
   ),
   restrictImports(
-    ['src/**/*-service.ts', 'src/**/types.ts', 'src/**/ai-provider.ts'],
+    ['src/**/*-service.ts', 'src/generations/generation.ts', 'src/**/ai-provider.ts'],
     [
       {
-        group: [...EXPRESS, ...DATABASE_DRIVERS],
+        group: [...EXPRESS, ...DATA_STORE_CLIENTS],
         message: 'Business code must not use Express, Postgres or Redis.',
       },
       {
@@ -70,7 +70,7 @@ export default tseslint.config(
     ['src/**/*-controller.ts'],
     [
       {
-        group: DATABASE_DRIVERS,
+        group: DATA_STORE_CLIENTS,
         message: 'Controllers call the service; they must not use Postgres or Redis.',
       },
       {

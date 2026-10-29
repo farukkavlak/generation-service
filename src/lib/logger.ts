@@ -1,4 +1,7 @@
-import type { Logger } from './logger.js';
+export interface Logger {
+  info(message: string, context?: Record<string, unknown>): void;
+  error(message: string, context?: Record<string, unknown>): void;
+}
 
 type Level = 'info' | 'error';
 
@@ -18,7 +21,7 @@ function toJsonLine(level: Level, message: string, context: Record<string, unkno
   );
 }
 
-// JSON.stringify skips name, message and stack; keep own fields like `code` too, since connection errors have no message.
+// JSON.stringify drops Error fields; keep own fields like `code` too, as connection errors have no message.
 function serializeError(_key: string, value: unknown): unknown {
   if (value instanceof Error) {
     return Object.assign({}, value, {

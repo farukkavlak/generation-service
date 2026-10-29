@@ -13,7 +13,7 @@ import { createApp } from './http/app.js';
 import { runMigrations } from './infra/migrate.js';
 import { createPostgresPool } from './infra/postgres.js';
 import { createRedisClient } from './infra/redis.js';
-import { consoleLogger as logger } from './lib/logger/console-logger.js';
+import { consoleLogger as logger } from './lib/logger.js';
 
 const MIGRATIONS_DIR = path.resolve('migrations');
 

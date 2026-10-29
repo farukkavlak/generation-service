@@ -1,6 +1,6 @@
 import express, { type Express, type Router } from 'express';
 
-import type { Logger } from '../lib/logger/logger.js';
+import type { Logger } from '../lib/logger.js';
 import { createErrorHandler } from './error-handler.js';
 
 // A 2000-char prompt fits even when every char is an escaped surrogate pair (12 bytes each).

@@ -1,7 +1,7 @@
 import type { ErrorRequestHandler } from 'express';
 
-import { ApplicationError } from '../lib/errors/application-error.js';
-import type { Logger } from '../lib/logger/logger.js';
+import { ApplicationError } from '../lib/application-error.js';
+import type { Logger } from '../lib/logger.js';
 import { UnauthorizedError } from './require-user-id.js';
 
 interface ErrorStatus {

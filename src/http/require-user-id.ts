@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 
-import { ApplicationError } from '../lib/errors/application-error.js';
+import { ApplicationError } from '../lib/application-error.js';
 
 // Matches the user_id CHECK in the database.
 const MAX_USER_ID_LENGTH = 128;

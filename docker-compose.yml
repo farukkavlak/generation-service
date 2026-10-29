@@ -1,6 +1,7 @@
 services:
   api:
     build: .
+    init: true
     restart: unless-stopped
     ports:
       - '3000:3000'
@@ -25,6 +26,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
+      # TCP check: during init Postgres listens on the socket only and would look ready too early.
       test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U postgres -d generation']
       interval: 2s
       timeout: 3s
@@ -32,7 +34,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    # Used only as a cache: no persistence, bounded memory, evict least recently used keys.
+    # Cache only: no persistence, and evict keys instead of rejecting writes when memory is full.
     command: redis-server --save '' --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru
     ports:
       - '127.0.0.1:6379:6379'

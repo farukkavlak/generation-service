@@ -1,6 +1,6 @@
 import pg from 'pg';
 
-import type { Logger } from '../lib/logger/logger.js';
+import type { Logger } from '../lib/logger.js';
 
 export function createPostgresPool(connectionString: string, logger: Logger): pg.Pool {
   const pool = new pg.Pool({
