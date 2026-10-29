@@ -82,6 +82,11 @@ export class GenerationService {
     return { generation, quotaRemaining: DAILY_QUOTA_LIMIT - reservation.used };
   }
 
+  async getQuotaRemaining(userId: string): Promise<number> {
+    const used = await this.quota.findUsedToday(userId);
+    return DAILY_QUOTA_LIMIT - used;
+  }
+
   private async releaseQuota(userId: string, day: string): Promise<number> {
     const used = await this.quota.release(userId, day);
     return DAILY_QUOTA_LIMIT - used;

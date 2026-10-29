@@ -22,7 +22,9 @@ export class GenerationController implements Controller {
   constructor(private readonly service: GenerationService) {}
 
   router(): Router {
-    return Router().post('/v1/generations', async (req, res) => {
+    const router = Router();
+
+    router.post('/v1/generations', async (req, res) => {
       const userId = requireUserId(req);
       try {
         const { generation, quotaRemaining } = await this.service.createGeneration(
@@ -38,6 +40,14 @@ export class GenerationController implements Controller {
         throw error;
       }
     });
+
+    router.get('/v1/quota', async (req, res) => {
+      const userId = requireUserId(req);
+      const remaining = await this.service.getQuotaRemaining(userId);
+      res.json({ remaining });
+    });
+
+    return router;
   }
 }
 

@@ -21,6 +21,15 @@ export class QuotaRepository {
     return rows[0];
   }
 
+  async findUsedToday(userId: string): Promise<number> {
+    const { rows } = await this.pool.query<{ used: number }>(
+      `SELECT used FROM daily_quota
+       WHERE user_id = $1 AND day = (now() AT TIME ZONE 'UTC')::date`,
+      [userId],
+    );
+    return rows[0]?.used ?? 0;
+  }
+
   async release(userId: string, day: string): Promise<number> {
     const { rows } = await this.pool.query<{ used: number }>(
       `UPDATE daily_quota SET used = used - 1
