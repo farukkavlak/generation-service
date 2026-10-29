@@ -56,7 +56,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/generations/**/*.ts'],
+    files: ['src/**/*-service.ts', 'src/**/types.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -64,11 +64,51 @@ export default tseslint.config(
           patterns: [
             {
               group: ['express', 'express/*', 'pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'],
-              message: 'Business code must not depend on infrastructure or HTTP.',
+              message: 'Services must not depend on Postgres, Redis or Express directly.',
             },
             {
               regex: '/(infra|http)/|^\\.\\./(server|config)\\.js$',
-              message: 'Business code must not depend on infrastructure, HTTP, config or wiring.',
+              message: 'Services must not depend on infrastructure, HTTP, config or wiring.',
+            },
+            {
+              regex: '-controller\\.js$',
+              message: 'Services must not depend on controllers.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/**/*-controller.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'],
+              message: 'Controllers must not talk to Postgres or Redis; call the service.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/**/*-repository.ts', 'src/**/result-cache.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['express', 'express/*'],
+              message: 'Data access must not depend on HTTP.',
+            },
+            {
+              regex: '/http/|-controller\\.js$',
+              message: 'Data access must not depend on HTTP.',
             },
           ],
         },
@@ -83,12 +123,8 @@ export default tseslint.config(
         {
           patterns: [
             {
-              regex: '/generations/(?!types\\.js$)',
-              message: 'Infrastructure may only depend on generations/types.ts.',
-            },
-            {
-              regex: '/http/|^\\.\\./server\\.js$',
-              message: 'Infrastructure must not depend on HTTP or wiring.',
+              regex: '^\\.\\./(?!lib/)',
+              message: 'Infrastructure holds connections only and may depend on lib only.',
             },
           ],
         },

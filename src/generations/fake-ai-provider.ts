@@ -1,6 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import type { AiProvider } from '../generations/types.js';
+import type { AiProvider } from './types.js';
 
 const RESPONSE_DELAY_MS = 300;
 const SLOW_DELAY_MS = 2000;
