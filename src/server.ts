@@ -19,7 +19,7 @@ const redis = createRedisClient(config.redisUrl, logger);
 
 await runMigrations(pool, MIGRATIONS_DIR, logger);
 
-const app = createApp();
+const app = createApp({ logger });
 const server = app.listen(config.port, (error) => {
   if (error) {
     throw error;

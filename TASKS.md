@@ -41,7 +41,7 @@ Done when every fake provider input behaves as described and the event loop is n
 - [x] Validate and normalize the prompt
 - [ ] Implement `POST /v1/generations`
 - [ ] Map provider errors to 502 and timeouts to 504
-- [ ] Add a central error handler
+- [x] Add a central error handler
 
 ## 5. Daily quota
 
