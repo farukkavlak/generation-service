@@ -3,6 +3,7 @@ import type { AiProvider } from './ai-provider.js';
 import type { Generation } from './generation.js';
 import type { GenerationRepository } from './generation-repository.js';
 import type { QuotaRepository } from './quota-repository.js';
+import type { ResultCache } from './result-cache.js';
 
 const MAX_PROMPT_LENGTH = 2000;
 const PROVIDER_TIMEOUT_MS = 3000;
@@ -57,10 +58,24 @@ export class GenerationService {
     private readonly provider: AiProvider,
     private readonly generations: GenerationRepository,
     private readonly quota: QuotaRepository,
+    private readonly cache: ResultCache,
   ) {}
 
   async createGeneration(userId: string, rawPrompt: unknown): Promise<CreatedGeneration> {
     const prompt = parsePrompt(rawPrompt);
+    const normalizedPrompt = normalizePrompt(prompt);
+
+    const cachedResult = await this.cache.find(normalizedPrompt);
+    if (cachedResult !== undefined) {
+      const generation = await this.generations.save({
+        userId,
+        prompt,
+        result: cachedResult,
+        cached: true,
+      });
+      return { generation, quotaRemaining: await this.getQuotaRemaining(userId) };
+    }
+
     const reservation = await this.quota.reserve(userId, DAILY_QUOTA_LIMIT);
     if (!reservation) {
       throw new QuotaExceededError();
@@ -68,7 +83,7 @@ export class GenerationService {
 
     let result: string | typeof TIMED_OUT;
     try {
-      result = await callProviderWithTimeout(this.provider, normalizePrompt(prompt));
+      result = await callProviderWithTimeout(this.provider, normalizedPrompt);
     } catch (error) {
       const quotaRemaining = await this.releaseQuota(userId, reservation.day);
       throw new ProviderFailedError(quotaRemaining, { cause: error });
@@ -78,6 +93,7 @@ export class GenerationService {
       throw new ProviderTimeoutError(quotaRemaining);
     }
 
+    await this.cache.save(normalizedPrompt, result);
     const generation = await this.generations.save({ userId, prompt, result, cached: false });
     return { generation, quotaRemaining: DAILY_QUOTA_LIMIT - reservation.used };
   }

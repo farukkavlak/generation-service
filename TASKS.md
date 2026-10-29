@@ -53,10 +53,10 @@ Done when every fake provider input behaves as described and the event loop is n
 
 ## 6. Result cache
 
-- [ ] Cache successful results in Redis by normalized prompt for 10 minutes
-- [ ] Check the cache before the quota
-- [ ] Save cache hits to the user's history
-- [ ] Keep serving requests when Redis is unavailable
+- [x] Cache successful results in Redis by normalized prompt for 10 minutes
+- [x] Check the cache before the quota
+- [x] Save cache hits to the user's history
+- [x] Keep serving requests when Redis is unavailable
 
 ## 7. History endpoint
 
