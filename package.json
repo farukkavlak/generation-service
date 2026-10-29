@@ -17,6 +17,7 @@
     "check": "npm run format:check && npm run lint && npm run typecheck",
     "test": "vitest run",
     "seed": "docker compose exec -T postgres psql -U postgres -d generation -v ON_ERROR_STOP=1 < scripts/seed.sql",
+    "explain": "docker compose exec -T postgres psql -U postgres -d generation -v ON_ERROR_STOP=1 < scripts/explain-history.sql",
     "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
