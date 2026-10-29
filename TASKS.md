@@ -1,6 +1,6 @@
 # Tasks
 
-The work is split into small units. Each unit is built on its own branch and reviewed before it is merged into `main`.
+The work is split into small units. Each change is reviewed before it is committed to `main`.
 
 ## 0. Tooling
 

@@ -22,7 +22,6 @@ export function createErrorHandler(logger: Logger): ErrorRequestHandler {
       logger.error('Unhandled error', { method: req.method, path: req.path, error });
     }
 
-    // Once a response has started, only Express can end it safely.
     if (res.headersSent) {
       next(error);
       return;

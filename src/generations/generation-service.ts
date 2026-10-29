@@ -1,31 +1,41 @@
 import { ApplicationError } from '../lib/errors/application-error.js';
+import type { AiProvider } from './ai-provider.js';
 import type { GenerationRepository } from './generation-repository.js';
-import type { AiProvider, Generation } from './types.js';
+import type { Generation } from './types.js';
 
 const MAX_PROMPT_LENGTH = 2000;
 const PROVIDER_TIMEOUT_MS = 3000;
 
-export enum ErrorCode {
-  InvalidPrompt = 'invalid_prompt',
-  ProviderFailed = 'provider_failed',
-  ProviderTimeout = 'provider_timeout',
-}
+export type ErrorCode = 'invalid_prompt' | 'provider_failed' | 'provider_timeout';
 
 export class InvalidPromptError extends ApplicationError<ErrorCode> {
   constructor(message: string) {
-    super(ErrorCode.InvalidPrompt, message);
+    super('invalid_prompt', message);
   }
 }
 
 export class ProviderFailedError extends ApplicationError<ErrorCode> {
   constructor(options?: ErrorOptions) {
-    super(ErrorCode.ProviderFailed, 'AI provider failed', options);
+    super('provider_failed', 'AI provider failed', options);
   }
 }
 
 export class ProviderTimeoutError extends ApplicationError<ErrorCode> {
   constructor() {
-    super(ErrorCode.ProviderTimeout, 'AI provider timed out');
+    super('provider_timeout', 'AI provider timed out');
+  }
+}
+
+export class GenerationService {
+  constructor(
+    private readonly provider: AiProvider,
+    private readonly generations: GenerationRepository,
+  ) {}
+
+  async createGeneration(userId: string, rawPrompt: unknown): Promise<Generation> {
+    const prompt = validatePrompt(rawPrompt);
+    const result = await callProviderWithTimeout(this.provider, normalizePrompt(prompt));
+    return this.generations.save({ userId, prompt, result, cached: false });
   }
 }
 
@@ -48,7 +58,7 @@ function validatePrompt(rawPrompt: unknown): string {
   return prompt;
 }
 
-// toLowerCase is locale independent on purpose: every instance must build the same cache key.
+// Locale-independent toLowerCase and NFC, so every instance and keyboard builds the same cache key.
 function normalizePrompt(prompt: string): string {
   return prompt.toLowerCase().normalize('NFC').replace(/\s+/g, ' ');
 }
@@ -73,18 +83,5 @@ async function callProviderWithTimeout(provider: AiProvider, prompt: string): Pr
     throw new ProviderFailedError({ cause: error });
   } finally {
     clearTimeout(timer);
-  }
-}
-
-export class GenerationService {
-  constructor(
-    private readonly provider: AiProvider,
-    private readonly generations: GenerationRepository,
-  ) {}
-
-  async createGeneration(userId: string, rawPrompt: unknown): Promise<Generation> {
-    const prompt = validatePrompt(rawPrompt);
-    const result = await callProviderWithTimeout(this.provider, normalizePrompt(prompt));
-    return this.generations.save({ userId, prompt, result, cached: false });
   }
 }

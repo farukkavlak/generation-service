@@ -3,6 +3,14 @@ import prettier from 'eslint-config-prettier';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
+const EXPRESS = ['express', 'express/*'];
+const DATABASE_DRIVERS = ['pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'];
+const WIRING = '^(\\.\\./)+(server|config)\\.js$';
+
+function restrictImports(files, patterns) {
+  return { files, rules: { 'no-restricted-imports': ['error', { patterns }] } };
+}
+
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'node_modules'] },
   js.configs.recommended,
@@ -23,114 +31,55 @@ export default tseslint.config(
       'simple-import-sort/exports': 'error',
     },
   },
-  {
-    files: ['src/lib/**/*.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              regex: '^\\.\\./\\.\\./',
-              message: 'src/lib must not depend on application code.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ['src/lib/*.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              regex: '^\\.\\./',
-              message: 'src/lib must not depend on application code.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ['src/**/*-service.ts', 'src/**/types.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['express', 'express/*', 'pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'],
-              message: 'Services must not depend on Postgres, Redis or Express directly.',
-            },
-            {
-              regex: '/(infra|http)/|^\\.\\./(server|config)\\.js$',
-              message: 'Services must not depend on infrastructure, HTTP, config or wiring.',
-            },
-            {
-              regex: '-controller\\.js$',
-              message: 'Services must not depend on controllers.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ['src/**/*-controller.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'],
-              message: 'Controllers must not talk to Postgres or Redis; call the service.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ['src/**/*-repository.ts', 'src/**/result-cache.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['express', 'express/*'],
-              message: 'Data access must not depend on HTTP.',
-            },
-            {
-              regex: '/http/|-controller\\.js$',
-              message: 'Data access must not depend on HTTP.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ['src/infra/**/*.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              regex: '^\\.\\./(?!lib/)',
-              message: 'Infrastructure holds connections only and may depend on lib only.',
-            },
-          ],
-        },
-      ],
-    },
-  },
+  restrictImports(
+    ['src/lib/**/*.ts'],
+    [{ regex: '^\\.\\./\\.\\./', message: 'lib must not depend on application code.' }],
+  ),
+  restrictImports(
+    ['src/infra/**/*.ts'],
+    [
+      {
+        regex: '^\\.\\./(?!lib/)',
+        message: 'infra holds connections only and may depend on lib only.',
+      },
+    ],
+  ),
+  restrictImports(
+    ['src/**/*-service.ts', 'src/**/types.ts', 'src/**/ai-provider.ts'],
+    [
+      {
+        group: [...EXPRESS, ...DATABASE_DRIVERS],
+        message: 'Business code must not use Express, Postgres or Redis.',
+      },
+      {
+        regex: `/(infra|http)/|-controller\\.js$|${WIRING}`,
+        message: 'Business code must not depend on infra, HTTP, controllers or wiring.',
+      },
+    ],
+  ),
+  restrictImports(
+    ['src/**/*-controller.ts'],
+    [
+      {
+        group: DATABASE_DRIVERS,
+        message: 'Controllers call the service; they must not use Postgres or Redis.',
+      },
+      {
+        regex: '/infra/|-repository\\.js$|result-cache\\.js$',
+        message: 'Controllers call the service, not data access.',
+      },
+    ],
+  ),
+  restrictImports(
+    ['src/**/*-repository.ts', 'src/**/result-cache.ts'],
+    [
+      { group: EXPRESS, message: 'Data access must not use Express.' },
+      {
+        regex: `/http/|-controller\\.js$|${WIRING}`,
+        message: 'Data access must not depend on HTTP, controllers or wiring.',
+      },
+    ],
+  ),
   {
     files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],

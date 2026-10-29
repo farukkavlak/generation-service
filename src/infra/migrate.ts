@@ -5,7 +5,6 @@ import type { Pool, PoolClient } from 'pg';
 
 import type { Logger } from '../lib/logger/logger.js';
 
-// Any fixed number; every instance must use the same one.
 const MIGRATION_LOCK_ID = 7_250_001;
 
 export async function runMigrations(

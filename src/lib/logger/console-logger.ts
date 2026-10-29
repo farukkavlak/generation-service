@@ -18,8 +18,7 @@ function toJsonLine(level: Level, message: string, context: Record<string, unkno
   );
 }
 
-// name, message and stack are not enumerable, so they are copied by hand. Other own fields like
-// `code` are kept too, because connection errors often have an empty message.
+// JSON.stringify skips name, message and stack; keep own fields like `code` too, since connection errors have no message.
 function serializeError(_key: string, value: unknown): unknown {
   if (value instanceof Error) {
     return Object.assign({}, value, {

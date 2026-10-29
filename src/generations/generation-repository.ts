@@ -11,16 +11,6 @@ interface GenerationRow {
   created_at: Date;
 }
 
-function toGeneration(row: GenerationRow): Generation {
-  return {
-    id: row.id,
-    prompt: row.prompt,
-    result: row.result,
-    cached: row.cached,
-    createdAt: row.created_at,
-  };
-}
-
 export class GenerationRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -37,4 +27,14 @@ export class GenerationRepository {
     }
     return toGeneration(row);
   }
+}
+
+function toGeneration(row: GenerationRow): Generation {
+  return {
+    id: row.id,
+    prompt: row.prompt,
+    result: row.result,
+    cached: row.cached,
+    createdAt: row.created_at,
+  };
 }
