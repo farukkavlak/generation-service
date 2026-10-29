@@ -45,6 +45,15 @@ export default tseslint.config(
     ],
   ),
   restrictImports(
+    ['src/http/**/*.ts'],
+    [
+      {
+        regex: '^\\.\\./(?!lib/)',
+        message: 'http is feature-independent and may depend on lib only.',
+      },
+    ],
+  ),
+  restrictImports(
     ['src/**/*-service.ts', 'src/**/types.ts', 'src/**/ai-provider.ts'],
     [
       {

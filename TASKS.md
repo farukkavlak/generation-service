@@ -37,10 +37,10 @@ Done when every fake provider input behaves as described and the event loop is n
 
 ## 4. Generation endpoint
 
-- [ ] Require the `X-User-Id` header
+- [x] Require the `X-User-Id` header
 - [x] Validate and normalize the prompt
-- [ ] Implement `POST /v1/generations`
-- [ ] Map provider errors to 502 and timeouts to 504
+- [x] Implement `POST /v1/generations`
+- [x] Map provider errors to 502 and timeouts to 504
 - [x] Add a central error handler
 
 ## 5. Daily quota

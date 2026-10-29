@@ -1,7 +1,7 @@
-export class ApplicationError<Code extends string = string> extends Error {
-  readonly code: Code;
+export class ApplicationError extends Error {
+  readonly code: string;
 
-  constructor(code: Code, message: string, options?: ErrorOptions) {
+  constructor(code: string, message: string, options?: ErrorOptions) {
     super(message, options);
     this.name = new.target.name;
     this.code = code;

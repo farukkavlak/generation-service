@@ -1,13 +1,15 @@
 import type { ErrorRequestHandler } from 'express';
 
+import { ApplicationError } from '../lib/errors/application-error.js';
 import type { Logger } from '../lib/logger/logger.js';
+import { UnauthorizedError } from './require-user-id.js';
 
-interface ClientError {
+interface ErrorStatus {
   status: number;
   code: string;
 }
 
-// express.json() sets the right status on its errors and names the problem in `type`.
+// express.json() errors carry their HTTP status and name the problem in `type`.
 const BODY_ERROR_CODES = new Map([
   ['entity.parse.failed', 'invalid_json'],
   ['entity.too.large', 'payload_too_large'],
@@ -15,11 +17,14 @@ const BODY_ERROR_CODES = new Map([
   ['encoding.unsupported', 'unsupported_media_type'],
 ]);
 
-export function createErrorHandler(logger: Logger): ErrorRequestHandler {
+export function createErrorHandler(
+  logger: Logger,
+  errorStatusByCode: ReadonlyMap<string, number>,
+): ErrorRequestHandler {
   return (error: unknown, req, res, next) => {
-    const clientError = clientErrorOf(error);
-    if (!clientError) {
-      logger.error('Unhandled error', { method: req.method, path: req.path, error });
+    const errorStatus = toErrorStatus(error, errorStatusByCode);
+    if (!errorStatus || errorStatus.status >= 500) {
+      logger.error('Request failed', { method: req.method, path: req.path, error });
     }
 
     if (res.headersSent) {
@@ -27,22 +32,38 @@ export function createErrorHandler(logger: Logger): ErrorRequestHandler {
       return;
     }
 
-    if (clientError) {
-      res.status(clientError.status).json({ error: clientError.code });
-      return;
-    }
-    res.status(500).json({ error: 'internal_error' });
+    const { status, code } = errorStatus ?? { status: 500, code: 'internal_error' };
+    res.status(status).json({ error: code });
   };
 }
 
-function clientErrorOf(error: unknown): ClientError | undefined {
-  if (typeof error !== 'object' || error === null || !('status' in error)) {
-    return undefined;
+function toErrorStatus(
+  error: unknown,
+  errorStatusByCode: ReadonlyMap<string, number>,
+): ErrorStatus | undefined {
+  if (error instanceof UnauthorizedError) {
+    return { status: 401, code: error.code };
   }
-  const { status } = error;
-  if (typeof status !== 'number' || status < 400 || status >= 500) {
+  if (error instanceof ApplicationError) {
+    const status = errorStatusByCode.get(error.code);
+    return status === undefined ? undefined : { status, code: error.code };
+  }
+  if (!isClientHttpError(error)) {
     return undefined;
   }
   const type = 'type' in error && typeof error.type === 'string' ? error.type : '';
-  return { status, code: BODY_ERROR_CODES.get(type) ?? 'bad_request' };
+  return { status: error.status, code: BODY_ERROR_CODES.get(type) ?? 'bad_request' };
+}
+
+// http-errors sets `expose` only on 4xx errors that are safe to show to the client.
+function isClientHttpError(error: unknown): error is { status: number; expose: true } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'expose' in error &&
+    error.expose === true &&
+    'status' in error &&
+    typeof error.status === 'number' &&
+    error.status < 500
+  );
 }

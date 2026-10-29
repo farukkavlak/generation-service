@@ -5,6 +5,10 @@ import { promisify } from 'node:util';
 import type { Express } from 'express';
 
 import { loadConfig } from './config.js';
+import { FakeAiProvider } from './generations/fake-ai-provider.js';
+import { GenerationController } from './generations/generation-controller.js';
+import { GenerationRepository } from './generations/generation-repository.js';
+import { GenerationService } from './generations/generation-service.js';
 import { createApp } from './http/app.js';
 import { runMigrations } from './infra/migrate.js';
 import { createPostgresPool } from './infra/postgres.js';
@@ -25,7 +29,12 @@ async function main(): Promise<void> {
 
   try {
     await runMigrations(pool, MIGRATIONS_DIR, logger);
-    const server = await listen(createApp({ logger }), config.port);
+    const generationService = new GenerationService(
+      new FakeAiProvider(),
+      new GenerationRepository(pool),
+    );
+    const app = createApp({ logger, controllers: [new GenerationController(generationService)] });
+    const server = await listen(app, config.port);
     logger.info('Server started', { port: config.port });
 
     const signal = await shutdownSignal();

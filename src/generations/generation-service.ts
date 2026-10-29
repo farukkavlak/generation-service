@@ -8,21 +8,21 @@ const PROVIDER_TIMEOUT_MS = 3000;
 
 export type ErrorCode = 'invalid_prompt' | 'provider_failed' | 'provider_timeout';
 
-export class InvalidPromptError extends ApplicationError<ErrorCode> {
+class InvalidPromptError extends ApplicationError {
   constructor(message: string) {
-    super('invalid_prompt', message);
+    super('invalid_prompt' satisfies ErrorCode, message);
   }
 }
 
-export class ProviderFailedError extends ApplicationError<ErrorCode> {
+class ProviderFailedError extends ApplicationError {
   constructor(options?: ErrorOptions) {
-    super('provider_failed', 'AI provider failed', options);
+    super('provider_failed' satisfies ErrorCode, 'AI provider failed', options);
   }
 }
 
-export class ProviderTimeoutError extends ApplicationError<ErrorCode> {
+class ProviderTimeoutError extends ApplicationError {
   constructor() {
-    super('provider_timeout', 'AI provider timed out');
+    super('provider_timeout' satisfies ErrorCode, 'AI provider timed out');
   }
 }
 
