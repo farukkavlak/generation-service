@@ -54,29 +54,26 @@ function normalizePrompt(prompt: string): string {
 }
 
 async function callProviderWithTimeout(provider: AiProvider, prompt: string): Promise<string> {
-  const signal = AbortSignal.timeout(PROVIDER_TIMEOUT_MS);
+  const controller = new AbortController();
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      // Reject before aborting, so the provider's abort error cannot win the race and turn into a 502.
+      reject(new ProviderTimeoutError());
+      controller.abort();
+    }, PROVIDER_TIMEOUT_MS);
+  });
+
   try {
-    // Also race the signal, so a provider that ignores it still cannot run past the timeout.
-    return await Promise.race([provider.generate(prompt, signal), rejectOnAbort(signal)]);
+    return await Promise.race([provider.generate(prompt, controller.signal), timeout]);
   } catch (error) {
-    // Providers may throw any error type when aborted, so the signal decides.
-    if (signal.aborted) {
-      throw new ProviderTimeoutError();
+    if (error instanceof ProviderTimeoutError) {
+      throw error;
     }
     throw new ProviderFailedError({ cause: error });
+  } finally {
+    clearTimeout(timer);
   }
-}
-
-function rejectOnAbort(signal: AbortSignal): Promise<never> {
-  return new Promise((_resolve, reject) => {
-    signal.addEventListener(
-      'abort',
-      () => {
-        reject(new ProviderTimeoutError());
-      },
-      { once: true },
-    );
-  });
 }
 
 export class GenerationService {
