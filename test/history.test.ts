@@ -56,4 +56,16 @@ describe('GET /v1/generations', () => {
 
     expect(response).toMatchObject({ status: 400, body: { error: 'invalid_limit' } });
   });
+
+  it.each([
+    'not-a-cursor',
+    '0000-01-01T00:00:00.000Z_1',
+    '2026-02-30T10:00:00.000Z_1',
+    '2026-01-01T10:00:00.000Z_9999999999999999999',
+  ])('rejects the invalid cursor %s', async (cursor) => {
+    const encoded = Buffer.from(cursor).toString('base64url');
+    const response = await app.get(`/v1/generations?cursor=${encoded}`, USER_ID);
+
+    expect(response).toMatchObject({ status: 400, body: { error: 'invalid_cursor' } });
+  });
 });

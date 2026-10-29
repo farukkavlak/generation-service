@@ -7,14 +7,12 @@ import type { ResultCache } from './result-cache.js';
 
 const MAX_PROMPT_LENGTH = 2000;
 const PROVIDER_TIMEOUT_MS = 3000;
-const DAILY_QUOTA_LIMIT = 5;
 const TIMED_OUT = Symbol('timed out');
+const DAILY_QUOTA_LIMIT = 5;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
-// Postgres has no year 0, but JS dates accept it.
-const CURSOR_DATE = /^(?!0000)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-// 18 digits always fit in a Postgres bigint.
-const CURSOR_ID = /^\d{1,18}$/;
+// "<createdAt ISO>_<id>". Postgres has no year 0 (JS dates accept it); 18 digits fit a bigint.
+const CURSOR = /^((?!0000)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)_(\d{1,18})$/;
 
 export type GenerationErrorCode =
   | 'invalid_prompt'
@@ -217,30 +215,12 @@ function parseLimit(rawLimit: unknown): number {
 }
 
 function decodeCursor(rawCursor: unknown): HistoryCursor {
-  if (typeof rawCursor !== 'string') {
-    throw new InvalidCursorError();
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(Buffer.from(rawCursor, 'base64url').toString('utf8'));
-  } catch {
-    throw new InvalidCursorError();
-  }
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('createdAt' in parsed) ||
-    !('id' in parsed)
-  ) {
-    throw new InvalidCursorError();
-  }
-  const { createdAt, id } = parsed;
-  if (
-    typeof createdAt !== 'string' ||
-    !CURSOR_DATE.test(createdAt) ||
-    typeof id !== 'string' ||
-    !CURSOR_ID.test(id)
-  ) {
+  const match =
+    typeof rawCursor === 'string'
+      ? CURSOR.exec(Buffer.from(rawCursor, 'base64url').toString('utf8'))
+      : null;
+  const [, createdAt, id] = match ?? [];
+  if (createdAt === undefined || id === undefined) {
     throw new InvalidCursorError();
   }
   const date = new Date(createdAt);
@@ -252,6 +232,6 @@ function decodeCursor(rawCursor: unknown): HistoryCursor {
 }
 
 function encodeCursor(generation: Generation): string {
-  const cursor = { createdAt: generation.createdAt.toISOString(), id: generation.id };
-  return Buffer.from(JSON.stringify(cursor)).toString('base64url');
+  const cursor = `${generation.createdAt.toISOString()}_${generation.id}`;
+  return Buffer.from(cursor).toString('base64url');
 }
