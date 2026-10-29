@@ -45,10 +45,10 @@ Done when every fake provider input behaves as described and the event loop is n
 
 ## 5. Daily quota
 
-- [ ] Reserve quota atomically before calling the provider
-- [ ] Release the reservation when the provider fails or times out
-- [ ] Return 429 when the quota is exhausted
-- [ ] Expose remaining quota in the `X-Quota-Remaining` header
+- [x] Reserve quota atomically before calling the provider
+- [x] Release the reservation when the provider fails or times out
+- [x] Return 429 when the quota is exhausted
+- [x] Expose remaining quota in the `X-Quota-Remaining` header
 - [ ] Implement `GET /v1/quota`
 
 ## 6. Result cache

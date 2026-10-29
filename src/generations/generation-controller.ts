@@ -3,11 +3,18 @@ import { type Request, Router } from 'express';
 import type { Controller } from '../http/app.js';
 import { requireUserId } from '../http/require-user-id.js';
 import type { Generation } from './generation.js';
-import type { GenerationErrorCode, GenerationService } from './generation-service.js';
+import {
+  ErrorWithQuotaRemaining,
+  type GenerationErrorCode,
+  type GenerationService,
+} from './generation-service.js';
+
+const QUOTA_REMAINING_HEADER = 'X-Quota-Remaining';
 
 export class GenerationController implements Controller {
   readonly errorStatusByCode: Readonly<Record<GenerationErrorCode, number>> = {
     invalid_prompt: 400,
+    quota_exceeded: 429,
     provider_failed: 502,
     provider_timeout: 504,
   };
@@ -17,8 +24,19 @@ export class GenerationController implements Controller {
   router(): Router {
     return Router().post('/v1/generations', async (req, res) => {
       const userId = requireUserId(req);
-      const generation = await this.service.createGeneration(userId, readPrompt(req));
-      res.status(201).json(toResponse(generation));
+      try {
+        const { generation, quotaRemaining } = await this.service.createGeneration(
+          userId,
+          readPrompt(req),
+        );
+        res.set(QUOTA_REMAINING_HEADER, String(quotaRemaining));
+        res.status(201).json(toResponse(generation));
+      } catch (error) {
+        if (error instanceof ErrorWithQuotaRemaining) {
+          res.set(QUOTA_REMAINING_HEADER, String(error.quotaRemaining));
+        }
+        throw error;
+      }
     });
   }
 }

@@ -9,6 +9,7 @@ import { FakeAiProvider } from './generations/fake-ai-provider.js';
 import { GenerationController } from './generations/generation-controller.js';
 import { GenerationRepository } from './generations/generation-repository.js';
 import { GenerationService } from './generations/generation-service.js';
+import { QuotaRepository } from './generations/quota-repository.js';
 import { createApp } from './http/app.js';
 import { runMigrations } from './infra/migrate.js';
 import { createPostgresPool } from './infra/postgres.js';
@@ -32,6 +33,7 @@ async function main(): Promise<void> {
     const generationService = new GenerationService(
       new FakeAiProvider(),
       new GenerationRepository(pool),
+      new QuotaRepository(pool),
     );
     const app = createApp({ logger, controllers: [new GenerationController(generationService)] });
     const server = await listen(app, config.port);
