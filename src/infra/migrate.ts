@@ -15,7 +15,8 @@ export async function runMigrations(
 ): Promise<void> {
   const client = await pool.connect();
   try {
-    // Instances may start together; the lock makes them migrate one at a time.
+    // Migrations may run long and may wait for another instance's lock.
+    await client.query('SET statement_timeout = 0');
     await client.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK_ID]);
     await createMigrationsTable(client);
 
@@ -23,13 +24,9 @@ export async function runMigrations(
       await applyMigration(client, migrationsDir, name);
       logger.info('Migration applied', { name });
     }
-
-    await client.query('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_ID]);
-    client.release();
-  } catch (error) {
-    // Closing the session rolls back the open transaction and frees the lock.
+  } finally {
+    // Closing the session frees the lock and rolls back an open transaction.
     client.release(true);
-    throw error;
   }
 }
 

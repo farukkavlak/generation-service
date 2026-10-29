@@ -1,52 +1,61 @@
+import type { Server } from 'node:http';
 import path from 'node:path';
 import { promisify } from 'node:util';
+
+import type { Express } from 'express';
 
 import { loadConfig } from './config.js';
 import { createApp } from './http/app.js';
 import { runMigrations } from './infra/migrate.js';
 import { createPostgresPool } from './infra/postgres.js';
 import { createRedisClient } from './infra/redis.js';
-import { consoleLogger } from './lib/logger/console-logger.js';
+import { consoleLogger as logger } from './lib/logger/console-logger.js';
 
-// npm scripts and the Docker image both start the service from the project root.
 const MIGRATIONS_DIR = path.resolve('migrations');
 
-const config = loadConfig();
-const logger = consoleLogger;
-
-const pool = createPostgresPool(config.databaseUrl, logger);
-const redis = createRedisClient(config.redisUrl, logger);
-
-await runMigrations(pool, MIGRATIONS_DIR, logger);
-
-const app = createApp({ logger });
-const server = app.listen(config.port, (error) => {
-  if (error) {
-    throw error;
-  }
-  logger.info('Server started', { port: config.port });
+main().catch((error: unknown) => {
+  logger.error('Service stopped with an error', { error });
+  process.exitCode = 1;
 });
 
-let shuttingDown = false;
+async function main(): Promise<void> {
+  const config = loadConfig();
+  const pool = createPostgresPool(config.databaseUrl, logger);
+  const redis = createRedisClient(config.redisUrl, logger);
 
-async function shutdown(signal: string): Promise<void> {
-  if (shuttingDown) {
-    return;
+  try {
+    await runMigrations(pool, MIGRATIONS_DIR, logger);
+    const server = await listen(createApp({ logger }), config.port);
+    logger.info('Server started', { port: config.port });
+
+    const signal = await shutdownSignal();
+    logger.info('Shutting down', { signal });
+    await promisify(server.close.bind(server))();
+  } finally {
+    // quit() fails while Redis is down and keeps the process alive; a cache has nothing to flush.
+    redis.disconnect();
+    await pool.end();
   }
-  shuttingDown = true;
-
-  logger.info('Shutting down', { signal });
-  await promisify(server.close.bind(server))();
-  // quit() fails while Redis is down and keeps the process alive; a cache has nothing to flush.
-  redis.disconnect();
-  await pool.end();
 }
 
-for (const signal of ['SIGTERM', 'SIGINT'] as const) {
-  process.once(signal, () => {
-    shutdown(signal).catch((error: unknown) => {
-      logger.error('Shutdown failed', { error });
-      process.exitCode = 1;
+function listen(app: Express, port: number): Promise<Server> {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(server);
+      }
     });
+  });
+}
+
+function shutdownSignal(): Promise<NodeJS.Signals> {
+  return new Promise((resolve) => {
+    for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+      process.once(signal, () => {
+        resolve(signal);
+      });
+    }
   });
 }

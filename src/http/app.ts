@@ -3,8 +3,8 @@ import express, { type Express } from 'express';
 import type { Logger } from '../lib/logger/logger.js';
 import { createErrorHandler } from './error-handler.js';
 
-// A 2000-char prompt fits even when every char is JSON-escaped (6 bytes each).
-const BODY_LIMIT = '16kb';
+// A 2000-char prompt fits even when every char is an escaped surrogate pair (12 bytes each).
+const BODY_LIMIT = '32kb';
 
 interface AppDeps {
   logger: Logger;
