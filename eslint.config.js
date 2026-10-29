@@ -76,6 +76,26 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/infra/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '/generations/(?!types\\.js$)',
+              message: 'Infrastructure may only depend on generations/types.ts.',
+            },
+            {
+              regex: '/http/|^\\.\\./server\\.js$',
+              message: 'Infrastructure must not depend on HTTP or wiring.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
   },

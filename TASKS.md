@@ -31,14 +31,14 @@ Done when migrations apply to an empty database and are skipped on restart.
 
 - [x] Define the `AiProvider` interface
 - [x] Implement the fake provider with the behaviors described in the case
-- [ ] Time out provider calls after 3 seconds
+- [x] Time out provider calls after 3 seconds
 
 Done when every fake provider input behaves as described and the event loop is never blocked.
 
 ## 4. Generation endpoint
 
 - [ ] Require the `X-User-Id` header
-- [ ] Validate and normalize the prompt
+- [x] Validate and normalize the prompt
 - [ ] Implement `POST /v1/generations`
 - [ ] Map provider errors to 502 and timeouts to 504
 - [ ] Add a central error handler
