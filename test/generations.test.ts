@@ -44,16 +44,16 @@ describe('POST /v1/generations', () => {
   });
 
   it('serves a differently written prompt from the cache', async () => {
-    const first = await app.postGeneration(USER_ID, 'merhaba');
-    const second = await app.postGeneration(USER_ID, '  MERHABA ');
+    const first = await app.postGeneration(USER_ID, 'merhaba dünya');
+    const second = await app.postGeneration(USER_ID, '  MERHABA   dünya ');
 
     expect(first).toMatchObject({ status: 201, quotaRemaining: '4', body: { cached: false } });
     expect(second).toMatchObject({
       status: 201,
       quotaRemaining: '4',
-      body: { prompt: 'MERHABA', result: 'Sonuç: merhaba', cached: true },
+      body: { prompt: 'MERHABA   dünya', result: 'Sonuç: merhaba dünya', cached: true },
     });
-    expect(provider.prompts).toEqual(['merhaba']);
+    expect(provider.prompts).toEqual(['merhaba dünya']);
     expect(await app.get('/v1/quota', USER_ID)).toMatchObject({ body: { remaining: 4 } });
     expect(await countGenerations(app, USER_ID)).toBe(2);
   });

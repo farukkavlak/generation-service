@@ -12,7 +12,7 @@ import { createPostgresPool } from '../src/infra/postgres.js';
 import { createRedisClient } from '../src/infra/redis.js';
 import { silentLogger } from './silent-logger.js';
 
-export interface TestResponse {
+interface TestResponse {
   status: number;
   quotaRemaining: string | null;
   body: unknown;
