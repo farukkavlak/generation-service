@@ -1,6 +1,6 @@
 import { type Request, Router } from 'express';
 
-import type { Controller } from '../http/app.js';
+import type { Controller } from '../http/controller.js';
 import { requireUserId } from '../http/require-user-id.js';
 import type { Generation } from './generation.js';
 import {
