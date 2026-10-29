@@ -20,6 +20,7 @@ interface TestResponse {
 
 interface StartOptions {
   redisDown?: boolean;
+  providerTimeoutMs?: number;
 }
 
 export class TestApp {
@@ -36,7 +37,13 @@ export class TestApp {
     if (options.redisDown) {
       redis.disconnect();
     }
-    const app = buildApp({ pool, redis, provider, logger: silentLogger });
+    const app = buildApp({
+      pool,
+      redis,
+      provider,
+      logger: silentLogger,
+      providerTimeoutMs: options.providerTimeoutMs,
+    });
     const server = await new Promise<Server>((resolve) => {
       const started = app.listen(0, () => {
         resolve(started);

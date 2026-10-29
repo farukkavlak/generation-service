@@ -88,6 +88,7 @@ export class GenerationService {
     private readonly generations: GenerationRepository,
     private readonly quota: QuotaRepository,
     private readonly cache: ResultCache,
+    private readonly providerTimeoutMs = PROVIDER_TIMEOUT_MS,
   ) {}
 
   async createGeneration(userId: string, rawPrompt: unknown): Promise<CreatedGeneration> {
@@ -112,7 +113,11 @@ export class GenerationService {
 
     let result: string | typeof TIMED_OUT;
     try {
-      result = await callProviderWithTimeout(this.provider, normalizedPrompt);
+      result = await callProviderWithTimeout(
+        this.provider,
+        normalizedPrompt,
+        this.providerTimeoutMs,
+      );
     } catch (error) {
       const quotaRemaining = await this.releaseQuota(userId, reservation.day);
       throw new ProviderFailedError(quotaRemaining, { cause: error });
@@ -182,6 +187,7 @@ function normalizePrompt(prompt: string): string {
 async function callProviderWithTimeout(
   provider: AiProvider,
   prompt: string,
+  timeoutMs: number,
 ): Promise<string | typeof TIMED_OUT> {
   const controller = new AbortController();
   let timer: NodeJS.Timeout | undefined;
@@ -190,7 +196,7 @@ async function callProviderWithTimeout(
       // Resolve before aborting, so the provider's abort error cannot win the race and turn into a 502.
       resolve(TIMED_OUT);
       controller.abort();
-    }, PROVIDER_TIMEOUT_MS);
+    }, timeoutMs);
   });
 
   try {

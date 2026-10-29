@@ -87,6 +87,29 @@ describe('POST /v1/generations', () => {
     expect(await countGenerations(app, USER_ID)).toBe(0);
   });
 
+  it('does not count or cache a provider timeout', async () => {
+    const appWithShortTimeout = await TestApp.start(provider, { providerTimeoutMs: 100 });
+    try {
+      provider.holdAnswers();
+      expect(await appWithShortTimeout.postGeneration(USER_ID, 'merhaba')).toMatchObject({
+        status: 504,
+        quotaRemaining: '5',
+        body: { error: 'provider_timeout' },
+      });
+      expect(provider.signals.map((signal) => signal.aborted)).toEqual([true]);
+      expect(await app.get('/v1/quota', USER_ID)).toMatchObject({ body: { remaining: 5 } });
+      expect(await countGenerations(app, USER_ID)).toBe(0);
+
+      provider.releaseAnswers();
+      expect(await app.postGeneration(USER_ID, 'merhaba')).toMatchObject({
+        status: 201,
+        body: { cached: false },
+      });
+    } finally {
+      await appWithShortTimeout.stop();
+    }
+  });
+
   it('keeps serving requests while Redis is down', async () => {
     const appWithoutRedis = await TestApp.start(provider, { redisDown: true });
     try {

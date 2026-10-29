@@ -20,14 +20,16 @@ interface AppDeps {
   redis: Redis;
   provider: AiProvider;
   logger: Logger;
+  providerTimeoutMs?: number;
 }
 
-export function buildApp({ pool, redis, provider, logger }: AppDeps): Express {
+export function buildApp({ pool, redis, provider, logger, providerTimeoutMs }: AppDeps): Express {
   const generationService = new GenerationService(
     provider,
     new GenerationRepository(pool),
     new QuotaRepository(pool),
     new ResultCache(redis, logger),
+    providerTimeoutMs,
   );
   const controllers: Controller[] = [new GenerationController(generationService)];
 

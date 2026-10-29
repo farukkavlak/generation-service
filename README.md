@@ -37,9 +37,8 @@ About 4–5 hours.
 
 - Cache stampede: concurrent misses for one prompt each call the provider.
 - A crash, failed release or failed save loses that slot for the day (never over the limit).
-- Waiting requests hold their slots, even if they later fail.
+- Waiting requests hold their slots, so a 429 can come before a 502/504 frees one.
 - `daily_quota` is never pruned.
-- No 504 test (fixed 3 s timeout); checked with curl.
 
 ## 10 instances, Redis down for one minute
 
