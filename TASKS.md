@@ -78,8 +78,8 @@ Done when every fake provider input behaves as described and the event loop is n
 
 ## 10. Delivery
 
-- [ ] Run the verification flow from the case end to end
-- [ ] Write the README
-- [ ] Answer the scaling question
-- [ ] Describe how AI was used
-- [ ] Review every case requirement once more
+- [x] Run the verification flow from the case end to end
+- [x] Write the README
+- [x] Answer the scaling question
+- [x] Describe how AI was used
+- [x] Review every case requirement once more
