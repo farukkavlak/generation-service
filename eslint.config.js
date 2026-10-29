@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
 
 const EXPRESS = ['express', 'express/*'];
 const DATA_STORE_CLIENTS = ['pg', 'pg/*', 'pg-*', 'ioredis', 'ioredis/*'];
-const WIRING = '^(\\.\\./)+(server|config)\\.js$';
+const WIRING = '^(\\.\\./)+(server|config|app)\\.js$';
 
 function restrictImports(files, patterns) {
   return { files, rules: { 'no-restricted-imports': ['error', { patterns }] } };
