@@ -1,5 +1,6 @@
 import { ApplicationError } from '../lib/errors/application-error.js';
-import type { AiProvider, Generation, GenerationRepository } from './types.js';
+import type { GenerationRepository } from './generation-repository.js';
+import type { AiProvider, Generation } from './types.js';
 
 const MAX_PROMPT_LENGTH = 2000;
 const PROVIDER_TIMEOUT_MS = 3000;
